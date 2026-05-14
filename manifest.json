@@ -1,0 +1,24 @@
+{
+"name": "إدارة حسابات سيارات النقل",
+"short_name": "حسابات النقل",
+"description": "تطبيق لتسجيل ومتابعة إيرادات ومصروفات سيارات النقل",
+"start_url": "./index.html",
+"display": "standalone",
+"background_color": "#f8fafc",
+"theme_color": "#1e3a8a",
+"orientation": "portrait-primary",
+"icons": [
+{
+"src": "https://via.placeholder.com/192x192/1e3a8a/ffffff?text=Icon",
+"sizes": "192x192",
+"type": "image/png",
+"purpose": "any maskable"
+},
+{
+"src": "https://via.placeholder.com/512x512/1e3a8a/ffffff?text=App",
+"sizes": "512x512",
+"type": "image/png",
+"purpose": "any maskable"
+}
+]
+}
