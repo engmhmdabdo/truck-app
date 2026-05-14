@@ -2,267 +2,278 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>نظام إدارة حسابات سيارات النقل</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="./manifest.json">
+    
+    <!-- إعدادات الألوان المخصصة لـ Tailwind لتطابق الصورة -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        app: {
+                            bg: '#1e201e',       /* لون الخلفية الأساسي */
+                            header: '#1a3328',   /* لون الهيدر الأخضر الغامق */
+                            card: '#2c2f2b',     /* لون كروت الفئات */
+                            text: '#e2e8f0',     /* لون النص الفاتح */
+                            accent: '#facc15',   /* اللون الأصفر للزر */
+                            expense: '#ef4444',  /* أحمر المصروفات */
+                            income: '#10b981'    /* أخضر الإيرادات */
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Tajawal', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
-        .bg-primary { background-color: #1e3a8a; } /* blue-900 */
-        .text-primary { color: #1e3a8a; }
-        .bg-secondary { background-color: #3b82f6; } /* blue-500 */
-        .text-secondary { color: #3b82f6; }
-        .bg-success { background-color: #10b981; } /* emerald-500 */
-        .text-success { color: #10b981; }
-        .bg-danger { background-color: #ef4444; } /* red-500 */
-        .text-danger { color: #ef4444; }
+        body { font-family: 'Tajawal', sans-serif; background-color: #1e201e; color: #e2e8f0; -webkit-tap-highlight-color: transparent; }
         
-        /* شريط التمرير */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* تخصيص شريط التمرير ليناسب الوضع الليلي */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1e201e; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+        
+        .tab-active { border-bottom: 3px solid #10b981; color: #10b981; font-weight: bold; }
+        .tab-inactive { color: #94a3b8; }
+        
+        /* تأثيرات النوافذ المنبثقة */
+        .modal-enter { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
     </style>
 </head>
-<body class="text-gray-800">
-    <header class="bg-primary text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex items-center gap-4">
-            <div class="bg-white/20 p-3 rounded-xl">
-                <i class="fa-solid fa-truck-moving text-3xl"></i>
+<body class="bg-app-bg text-app-text pb-24">
+
+    <!-- الهيدر (رأس الصفحة) -->
+    <header class="bg-app-header rounded-b-3xl shadow-lg pt-6 pb-2 px-4 sticky top-0 z-10">
+        <div class="flex justify-between items-center mb-4">
+            <button onclick="openHistoryModal()" class="text-gray-300 hover:text-white text-xl p-2"><i class="fa-solid fa-file-invoice-dollar"></i></button>
+            <div class="text-center cursor-pointer" onclick="toggleTotalView()">
+                <div class="text-sm text-gray-300 flex items-center justify-center gap-1">الإجمالي <i class="fa-solid fa-caret-down text-xs"></i></div>
+                <div id="mainBalance" class="text-2xl font-bold text-white mt-1" dir="ltr">0 LE</div>
             </div>
-            <div class="flex-1">
-                <h1 class="text-2xl font-bold">نظام إدارة حسابات سيارات النقل</h1>
-                <p class="text-sm text-blue-200 mt-1">سجل الدخل، المنصرف، وتابع أرباح كل سيارة بسهولة</p>
-            </div>
-            <!-- زر تثبيت التطبيق -->
-            <button id="installAppBtn" class="hidden bg-white text-primary font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-100 transition duration-200 flex items-center gap-2 text-sm sm:text-base">
-                <i class="fa-solid fa-download"></i>
-                <span class="hidden sm:inline">تثبيت التطبيق</span>
-            </button>
+            <button id="installAppBtn" class="hidden text-app-accent hover:text-yellow-300 text-xl p-2"><i class="fa-solid fa-download"></i></button>
+        </div>
+
+        <!-- فلتر السيارات (مبسط) -->
+        <div class="mb-4 px-8">
+            <select id="filterTruck" class="w-full bg-black/20 text-center text-white border-none rounded-lg py-1 text-sm appearance-none outline-none">
+                <option value="all">جميع السيارات</option>
+            </select>
+        </div>
+
+        <!-- تبويبات الدخل والنفقات -->
+        <div class="flex justify-around text-lg">
+            <button id="tabExpense" onclick="switchTab('expense')" class="pb-2 px-6 w-1/2 tab-active transition-all">نفقات</button>
+            <button id="tabIncome" onclick="switchTab('income')" class="pb-2 px-6 w-1/2 tab-inactive transition-all">دخل</button>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 pb-20">
-        <!-- كروت الملخص -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
-                <div><p class="text-gray-500 text-sm font-medium mb-1">الإيرادات</p><h3 class="text-2xl font-bold text-success"><span id="totalIncome">0</span> ج.م</h3></div>
-                <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-success text-xl"><i class="fa-solid fa-arrow-trend-up"></i></div>
-            </div>
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
-                <div><p class="text-gray-500 text-sm font-medium mb-1">المصروفات</p><h3 class="text-2xl font-bold text-danger"><span id="totalExpense">0</span> ج.م</h3></div>
-                <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-danger text-xl"><i class="fa-solid fa-arrow-trend-down"></i></div>
-            </div>
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
-                <div><p class="text-gray-500 text-sm font-medium mb-1">الربح</p><h3 class="text-2xl font-bold text-primary"><span id="netProfit">0</span> ج.م</h3></div>
-                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-secondary text-xl"><i class="fa-solid fa-wallet"></i></div>
+    <main class="max-w-md mx-auto px-4 mt-6">
+        
+        <!-- فلتر الوقت (توضيحي) -->
+        <div class="flex justify-between items-center text-gray-400 text-sm mb-6 px-2">
+            <button><i class="fa-solid fa-chevron-right"></i></button>
+            <span class="font-bold text-white border-b border-gray-500 pb-1" id="currentDateDisplay">الشهر الحالي</span>
+            <button><i class="fa-solid fa-chevron-left"></i></button>
+        </div>
+
+        <!-- الرسم البياني الدائري -->
+        <div class="relative w-64 h-64 mx-auto mb-8">
+            <canvas id="mainChart"></canvas>
+            <!-- الرقم في منتصف الدائرة -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span id="chartCenterAmount" class="text-2xl font-bold text-white tracking-wider" dir="ltr">0</span>
+                <span class="text-xs text-gray-400 mt-1" id="chartCenterLabel">إجمالي النفقات</span>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- قسم إدخال البيانات -->
-            <div class="lg:col-span-1 space-y-8">
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                    <h2 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                        <i class="fa-solid fa-circle-plus text-secondary"></i> تسجيل معاملة
-                    </h2>
-                    <form id="transactionForm" class="space-y-4">
-                        <div class="flex gap-4 mb-4">
-                            <label class="flex-1 relative">
-                                <input type="radio" name="type" value="income" class="peer sr-only" checked>
-                                <div class="text-center p-3 rounded-lg border-2 border-gray-200 cursor-pointer peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-600 font-bold transition">إيراد</div>
-                            </label>
-                            <label class="flex-1 relative">
-                                <input type="radio" name="type" value="expense" class="peer sr-only">
-                                <div class="text-center p-3 rounded-lg border-2 border-gray-200 cursor-pointer peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-600 font-bold transition">منصرف</div>
-                            </label>
-                        </div>
-                        
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">السيارة</label><input type="text" id="truck" required class="w-full px-4 py-2 border border-gray-300 rounded-lg"></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">المبلغ</label><input type="number" id="amount" required min="1" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg"></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">التاريخ</label><input type="date" id="date" required class="w-full px-4 py-2 border border-gray-300 rounded-lg"></div>
-                        
-                        <!-- قسم الفئة الديناميكي -->
-                        <div id="categoryContainer">
-                            <div class="flex justify-between items-end mb-1">
-                                <label class="block text-sm font-medium text-gray-700">الفئة</label>
-                                <button type="button" onclick="openCategoryModal()" class="text-xs text-secondary hover:text-blue-800 flex items-center gap-1 font-bold">
-                                    <i class="fa-solid fa-gear"></i> إدارة الفئات
-                                </button>
-                            </div>
-                            <select id="category" required class="w-full px-4 py-2 border border-gray-300 rounded-lg"></select>
-                        </div>
-                        
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">الوصف</label><input type="text" id="description" required class="w-full px-4 py-2 border border-gray-300 rounded-lg"></div>
-                        <button type="submit" class="w-full bg-primary hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-lg shadow-md mt-4 transition">حفظ المعاملة</button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="lg:col-span-2 space-y-6">
-                
-                <!-- الرسوم البيانية -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hidden md:block">
-                        <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2 text-center"><i class="fa-solid fa-chart-pie text-red-500 ml-2"></i>المنصرفات بالفئات</h2>
-                        <div class="relative h-48 w-full"><canvas id="expensesChart"></canvas></div>
-                    </div>
-                    
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hidden md:block">
-                        <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2 text-center"><i class="fa-solid fa-chart-pie text-green-500 ml-2"></i>الإيرادات بالفئات</h2>
-                        <div class="relative h-48 w-full"><canvas id="incomeCategoryChart"></canvas></div>
-                    </div>
-                    
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hidden md:block md:col-span-2">
-                        <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2 text-center"><i class="fa-solid fa-scale-balanced text-blue-500 ml-2"></i>الإيرادات مقابل المصروفات</h2>
-                        <div class="relative h-64 w-full flex justify-center"><canvas id="incomeExpenseChart"></canvas></div>
-                    </div>
-                </div>
-
-                <!-- جدول عرض المعاملات -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                        <select id="filterTruck" class="px-4 py-2 border border-gray-300 rounded-lg text-sm bg-white"></select>
-                        <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition"><i class="fa-solid fa-file-excel"></i> تصدير Excel</button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50"><tr>
-                                <th class="px-4 py-3 text-right text-xs font-bold text-gray-500">التاريخ</th>
-                                <th class="px-4 py-3 text-right text-xs font-bold text-gray-500">السيارة</th>
-                                <th class="px-4 py-3 text-right text-xs font-bold text-gray-500">البيان والفئة</th>
-                                <th class="px-4 py-3 text-right text-xs font-bold text-gray-500">المبلغ</th>
-                                <th class="px-4 py-3 text-right text-xs font-bold text-gray-500">إجراء</th>
-                            </tr></thead>
-                            <tbody id="transactionList" class="bg-white divide-y divide-gray-200"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+        <!-- قائمة الفئات والنسب -->
+        <div id="categoryListDisplay" class="space-y-3">
+            <!-- سيتم توليد العناصر هنا بواسطة جافاسكربت -->
         </div>
 
-        <!-- نافذة إدارة الفئات (Modal) -->
-        <div id="categoryModal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
-                <div class="p-4 border-b flex justify-between items-center bg-gray-50">
-                    <h3 class="text-lg font-bold text-gray-800">إعدادات الفئات والألوان</h3>
-                    <button onclick="closeCategoryModal()" class="text-gray-500 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
-                </div>
-                <div class="p-6">
-                    <div class="flex gap-2 mb-4">
-                        <button onclick="renderCategoryList('expense')" id="btnManageExpense" class="flex-1 py-2 rounded-lg font-bold bg-red-100 text-red-700 transition">المنصرفات</button>
-                        <button onclick="renderCategoryList('income')" id="btnManageIncome" class="flex-1 py-2 rounded-lg font-bold bg-gray-100 text-gray-600 transition">الإيرادات</button>
-                    </div>
-                    
-                    <form id="addCategoryForm" class="flex gap-2 mb-6">
-                        <input type="text" id="newCategoryName" placeholder="اسم الفئة الجديدة..." required class="flex-1 px-3 py-2 border border-gray-300 rounded-lg">
-                        <input type="color" id="newCategoryColor" value="#3b82f6" class="w-10 h-10 p-1 border border-gray-300 rounded-lg cursor-pointer" title="اختر لون الفئة">
-                        <button type="submit" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition"><i class="fa-solid fa-plus"></i></button>
-                    </form>
-
-                    <div class="max-h-60 overflow-y-auto pr-2">
-                        <ul id="categoryManagerList" class="space-y-2"></ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- نهاية النافذة المنبثقة -->
     </main>
+
+    <!-- زر الإضافة العائم (FAB) -->
+    <button onclick="openAddModal()" class="fixed bottom-6 left-6 bg-app-accent text-black w-14 h-14 rounded-full text-2xl shadow-[0_4px_15px_rgba(250,204,21,0.4)] flex items-center justify-center hover:scale-105 transition-transform z-20">
+        <i class="fa-solid fa-plus"></i>
+    </button>
+
+    <!-- نافذة إضافة معاملة (Modal) -->
+    <div id="addTransactionModal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-end justify-center">
+        <div class="bg-app-bg w-full max-w-md rounded-t-3xl p-6 modal-enter border-t border-gray-700 h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white">تسجيل معاملة</h2>
+                <button onclick="closeAddModal()" class="text-gray-400 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <form id="transactionForm" class="space-y-5">
+                <!-- اختيار النوع -->
+                <div class="flex gap-4 p-1 bg-black/30 rounded-xl">
+                    <label class="flex-1 relative">
+                        <input type="radio" name="type" value="expense" class="peer sr-only" checked onchange="updateCategoryDropdown('expense')">
+                        <div class="text-center py-2 rounded-lg cursor-pointer text-gray-400 peer-checked:bg-app-expense peer-checked:text-white font-bold transition">منصرف</div>
+                    </label>
+                    <label class="flex-1 relative">
+                        <input type="radio" name="type" value="income" class="peer sr-only" onchange="updateCategoryDropdown('income')">
+                        <div class="text-center py-2 rounded-lg cursor-pointer text-gray-400 peer-checked:bg-app-income peer-checked:text-white font-bold transition">إيراد</div>
+                    </label>
+                </div>
+                
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">المبلغ (LE)</label>
+                    <input type="number" id="amount" required min="1" step="0.01" class="w-full bg-app-card text-white px-4 py-3 border border-gray-700 rounded-xl focus:outline-none focus:border-app-accent" placeholder="0.00" dir="ltr">
+                </div>
+                
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">السيارة</label>
+                    <input type="text" id="truck" required class="w-full bg-app-card text-white px-4 py-3 border border-gray-700 rounded-xl focus:outline-none focus:border-app-accent" placeholder="رقم أو اسم السيارة">
+                </div>
+                
+                <div id="categoryContainer">
+                    <div class="flex justify-between items-end mb-1">
+                        <label class="block text-sm text-gray-400">الفئة</label>
+                        <button type="button" onclick="openCategoryModal()" class="text-xs text-app-accent flex items-center gap-1"><i class="fa-solid fa-gear"></i> إدارة</button>
+                    </div>
+                    <select id="category" required class="w-full bg-app-card text-white px-4 py-3 border border-gray-700 rounded-xl focus:outline-none focus:border-app-accent appearance-none"></select>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">التاريخ</label>
+                    <input type="date" id="date" required class="w-full bg-app-card text-white px-4 py-3 border border-gray-700 rounded-xl focus:outline-none focus:border-app-accent text-right">
+                </div>
+                
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">البيان / الوصف</label>
+                    <input type="text" id="description" class="w-full bg-app-card text-white px-4 py-3 border border-gray-700 rounded-xl focus:outline-none focus:border-app-accent" placeholder="تفاصيل إضافية (اختياري)">
+                </div>
+                
+                <button type="submit" class="w-full bg-app-accent text-black font-bold py-4 rounded-xl mt-6 text-lg shadow-lg">حفظ</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- نافذة سجل المعاملات (History Modal) -->
+    <div id="historyModal" class="fixed inset-0 bg-black/90 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-app-bg w-full max-w-4xl rounded-2xl p-4 h-[90vh] flex flex-col border border-gray-700">
+            <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-700">
+                <h2 class="text-xl font-bold text-white"><i class="fa-solid fa-list mr-2"></i> سجل المعاملات</h2>
+                <div class="flex gap-3">
+                    <button onclick="exportToCSV()" class="bg-app-income text-white px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1"><i class="fa-solid fa-file-excel"></i> تصدير</button>
+                    <button onclick="closeHistoryModal()" class="text-gray-400 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <div class="overflow-y-auto flex-1 pb-4">
+                <table class="min-w-full divide-y divide-gray-700 text-right">
+                    <thead>
+                        <tr class="text-gray-400 text-sm">
+                            <th class="py-3 px-2 font-medium">التاريخ</th>
+                            <th class="py-3 px-2 font-medium">السيارة</th>
+                            <th class="py-3 px-2 font-medium">الفئة</th>
+                            <th class="py-3 px-2 font-medium text-left">المبلغ</th>
+                            <th class="py-3 px-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionList" class="divide-y divide-gray-800 text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة إدارة الفئات -->
+    <div id="categoryModal" class="fixed inset-0 bg-black/80 hidden z-[60] flex items-center justify-center p-4">
+        <div class="bg-app-bg rounded-2xl border border-gray-700 w-full max-w-md overflow-hidden">
+            <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white">إدارة الفئات</h3>
+                <button onclick="closeCategoryModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-6">
+                <div class="flex gap-2 mb-4 bg-black/30 p-1 rounded-xl">
+                    <button onclick="renderCategoryManagerList('expense')" id="btnManageExpense" class="flex-1 py-2 rounded-lg font-bold bg-app-expense text-white">منصرفات</button>
+                    <button onclick="renderCategoryManagerList('income')" id="btnManageIncome" class="flex-1 py-2 rounded-lg font-bold text-gray-400">إيرادات</button>
+                </div>
+                
+                <form id="addCategoryForm" class="flex gap-2 mb-6">
+                    <input type="color" id="newCategoryColor" value="#facc15" class="w-12 h-12 p-0 border-0 rounded-xl cursor-pointer bg-transparent">
+                    <input type="text" id="newCategoryName" placeholder="اسم الفئة..." required class="flex-1 px-4 py-2 bg-app-card border border-gray-700 text-white rounded-xl focus:outline-none">
+                    <button type="submit" class="bg-app-accent text-black px-4 py-2 rounded-xl font-bold"><i class="fa-solid fa-plus"></i></button>
+                </form>
+
+                <div class="max-h-60 overflow-y-auto">
+                    <ul id="categoryManagerList" class="space-y-2"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // المتغيرات الأساسية
         let transactions = [];
-        let expenseChartInstance = null;
-        let incomeCategoryChartInstance = null;
-        let incomeExpenseChartInstance = null;
+        let mainChartInstance = null;
+        let activeTab = 'expense'; // 'expense' or 'income'
+        let currentManagingType = 'expense';
+        let showNetProfit = false; // لعرض صافي الربح في الهيدر
 
-        // الفئات الافتراضية وألوانها
+        // الفئات الافتراضية بألوان داكنة وتناسق مع الوضع الليلي
         let customCategories = {
             expense: [
-                { name: "وقود", color: "#ef4444" },
-                { name: "صيانة", color: "#f59e0b" },
-                { name: "كاوتش", color: "#8b5cf6" },
-                { name: "كارتة", color: "#ec4899" },
-                { name: "رواتب", color: "#3b82f6" },
-                { name: "مخالفات", color: "#64748b" },
+                { name: "وقود", color: "#f87171" },
+                { name: "صيانة", color: "#60a5fa" },
+                { name: "كاوتش", color: "#fb7185" },
+                { name: "كارتة", color: "#c084fc" },
+                { name: "رواتب", color: "#38bdf8" },
+                { name: "قطع غيار", color: "#2dd4bf" },
                 { name: "أخرى", color: "#94a3b8" }
             ],
             income: [
-                { name: "نقلة", color: "#10b981" },
-                { name: "عهدة", color: "#0ea5e9" },
+                { name: "نقلة", color: "#34d399" },
+                { name: "عهدة", color: "#22c55e" },
                 { name: "أخرى", color: "#94a3b8" }
             ]
         };
-        let currentManagingType = 'income';
 
-        // عناصر واجهة المستخدم
+        // عناصر DOM
         const form = document.getElementById('transactionForm');
         const list = document.getElementById('transactionList');
         const filterSelect = document.getElementById('filterTruck');
-        const typeRadios = document.querySelectorAll('input[name="type"]');
         const categorySelect = document.getElementById('category');
         const dateInput = document.getElementById('date');
+        const addModal = document.getElementById('addTransactionModal');
+        const historyModal = document.getElementById('historyModal');
         const categoryModal = document.getElementById('categoryModal');
 
-        // تعيين تاريخ اليوم افتراضياً
+        // تعيين تاريخ اليوم
         if(dateInput) dateInput.valueAsDate = new Date();
 
-        const installAppBtn = document.getElementById('installAppBtn');
-        let deferredPrompt;
-        // التأكد من أن المستخدم ليس داخل التطبيق المثبت بالفعل
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
-        if (installAppBtn && !isStandalone) {
-            installAppBtn.classList.remove('hidden'); // إظهار الزر على المتصفح
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                deferredPrompt = e;
-            });
-            installAppBtn.addEventListener('click', async () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    if (outcome === 'accepted') {
-                        installAppBtn.classList.add('hidden');
-                    }
-                    deferredPrompt = null;
-                } else {
-                    alert('كيفية تثبيت التطبيق:\n\n📱 أندرويد: اضغط على قائمة المتصفح (الثلاث نقاط) واختر "الإضافة إلى الشاشة الرئيسية" (Add to Home screen).\n\n🍏 آيفون: اضغط على زر المشاركة بالأسفل واختر "إضافة إلى الصفحة الرئيسية" (Add to Home screen).\n\nملاحظة: إذا لم تجد الخيار، فقد يكون التطبيق مثبتاً بالفعل على جهازك.');
-                }
-            });
-            window.addEventListener('appinstalled', () => {
-                installAppBtn.classList.add('hidden');
-            });
-        }
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Error:', err));
-            });
-        }
-
-        // تحديث خيارات الفئة بناءً على النوع المختار (إيراد/منصرف)
-        function updateCategoryDropdown(type) {
-            if(!categorySelect) return;
-            categorySelect.innerHTML = '';
-            if(customCategories[type]) {
-                customCategories[type].forEach(cat => {
-                    categorySelect.appendChild(new Option(cat.name, cat.name));
-                });
+        // التبديل بين النفقات والدخل (التبويبات العلوية)
+        window.switchTab = function(tab) {
+            activeTab = tab;
+            const tabExp = document.getElementById('tabExpense');
+            const tabInc = document.getElementById('tabIncome');
+            
+            if(tab === 'expense') {
+                tabExp.className = 'pb-2 px-6 w-1/2 tab-active transition-all';
+                tabInc.className = 'pb-2 px-6 w-1/2 tab-inactive transition-all';
+                document.getElementById('chartCenterLabel').textContent = 'إجمالي النفقات';
+            } else {
+                tabInc.className = 'pb-2 px-6 w-1/2 tab-active transition-all';
+                tabExp.className = 'pb-2 px-6 w-1/2 tab-inactive transition-all';
+                document.getElementById('chartCenterLabel').textContent = 'إجمالي الدخل';
             }
-        }
+            updateDashboard();
+        };
 
-        // الاستماع لتغيير نوع المعاملة
-        typeRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                updateCategoryDropdown(e.target.value);
-            });
-        });
-
-        // جلب البيانات من الذاكرة المحلية
         function loadData() {
             const saved = localStorage.getItem('transport_data');
             if (saved) { try { transactions = JSON.parse(saved); } catch(e) { transactions = []; } }
@@ -270,96 +281,25 @@
             const savedCategories = localStorage.getItem('transport_categories');
             if (savedCategories) { try { customCategories = JSON.parse(savedCategories); } catch(e) {} }
 
-            const checkedRadio = document.querySelector('input[name="type"]:checked');
-            if(checkedRadio) updateCategoryDropdown(checkedRadio.value);
+            updateCategoryDropdown('expense'); // التهيئة الافتراضية للنموذج
             
+            // تعيين التاريخ في الهيدر ليعرض الشهر والسنة الحالية
+            const now = new Date();
+            const months = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+            document.getElementById('currentDateDisplay').textContent = `${months[now.getMonth()]} ${now.getFullYear()}`;
+
             updateTruckFilter();
-            updateUI();
+            updateDashboard();
+            updateHistoryTable();
         }
 
-        // حفظ البيانات في الذاكرة المحلية
         function saveData() {
             localStorage.setItem('transport_data', JSON.stringify(transactions));
             localStorage.setItem('transport_categories', JSON.stringify(customCategories));
             updateTruckFilter();
-            updateUI();
+            updateDashboard();
+            updateHistoryTable();
         }
-
-        window.openCategoryModal = function() {
-            if(categoryModal) categoryModal.classList.remove('hidden');
-            const checkedType = document.querySelector('input[name="type"]:checked');
-            const currentType = checkedType ? checkedType.value : 'income';
-            renderCategoryList(currentType);
-        };
-
-        window.closeCategoryModal = function() {
-            if(categoryModal) categoryModal.classList.add('hidden');
-            const checkedType = document.querySelector('input[name="type"]:checked');
-            const currentType = checkedType ? checkedType.value : 'income';
-            updateCategoryDropdown(currentType);
-            updateUI(); // تحديث الألوان في الرسوم البيانية
-        };
-
-        window.renderCategoryList = function(type) {
-            currentManagingType = type;
-            const btnExp = document.getElementById('btnManageExpense');
-            const btnInc = document.getElementById('btnManageIncome');
-            
-            if(btnExp && btnInc) {
-                btnExp.className = type === 'expense' ? 'flex-1 py-2 rounded-lg font-bold bg-red-100 text-red-700 shadow-sm' : 'flex-1 py-2 rounded-lg font-bold bg-gray-100 text-gray-600 hover:bg-gray-200';
-                btnInc.className = type === 'income' ? 'flex-1 py-2 rounded-lg font-bold bg-green-100 text-green-700 shadow-sm' : 'flex-1 py-2 rounded-lg font-bold bg-gray-100 text-gray-600 hover:bg-gray-200';
-            }
-            
-            const ul = document.getElementById('categoryManagerList');
-            if(!ul) return;
-            ul.innerHTML = '';
-            
-            customCategories[type].forEach((cat, index) => {
-                ul.innerHTML += `
-                    <li class="flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-200">
-                        <div class="flex items-center gap-3">
-                            <input type="color" value="${cat.color}" onchange="updateCategoryColor('${type}', ${index}, this.value)" class="w-8 h-8 p-0 border-0 rounded cursor-pointer" title="تغيير اللون">
-                            <span class="text-sm font-semibold">${cat.name}</span>
-                        </div>
-                        <button type="button" onclick="deleteCustomCategory('${type}', ${index})" class="text-red-500 hover:text-red-700 p-2 bg-red-50 rounded-lg"><i class="fa-solid fa-trash"></i></button>
-                    </li>
-                `;
-            });
-        };
-
-        window.updateCategoryColor = function(type, index, newColor) {
-            customCategories[type][index].color = newColor;
-            saveData();
-            updateUI(); // يطبق التغيير فورا
-        };
-
-        const addCategoryForm = document.getElementById('addCategoryForm');
-        if(addCategoryForm) {
-            addCategoryForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const nameInput = document.getElementById('newCategoryName');
-                const colorInput = document.getElementById('newCategoryColor');
-                
-                if(nameInput.value.trim() === '') return;
-                
-                customCategories[currentManagingType].push({
-                    name: nameInput.value.trim(),
-                    color: colorInput.value
-                });
-                
-                saveData();
-                renderCategoryList(currentManagingType);
-                nameInput.value = '';
-            });
-        }
-
-        window.deleteCustomCategory = function(type, index) {
-            if(confirm('هل أنت متأكد من حذف هذه الفئة؟ سيتم الاحتفاظ بالمعاملات القديمة المسجلة بها.')) {
-                customCategories[type].splice(index, 1);
-                saveData();
-                renderCategoryList(type);
-            }
-        };
 
         function updateTruckFilter() {
             const currentVal = filterSelect.value;
@@ -369,112 +309,190 @@
             if (trucks.includes(currentVal)) filterSelect.value = currentVal;
         }
 
-        filterSelect.addEventListener('change', updateUI);
+        filterSelect.addEventListener('change', updateDashboard);
 
-        function updateUI() {
+        // التبديل بين عرض إجمالي المصروفات/الإيرادات وبين صافي الربح في الهيدر
+        window.toggleTotalView = function() {
+            showNetProfit = !showNetProfit;
+            updateDashboard();
+        }
+
+        function updateDashboard() {
             const filterValue = filterSelect.value;
             let filtered = filterValue === 'all' ? transactions : transactions.filter(t => t.truck === filterValue);
             
-            const income = filtered.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-            const expense = filtered.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+            // حساب الإجماليات للهيدر
+            const totalInc = filtered.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
+            const totalExp = filtered.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
+            const net = totalInc - totalExp;
             
-            document.getElementById('totalIncome').textContent = income.toLocaleString('ar-EG');
-            document.getElementById('totalExpense').textContent = expense.toLocaleString('ar-EG');
-            document.getElementById('netProfit').textContent = (income - expense).toLocaleString('ar-EG');
+            const mainBalanceEl = document.getElementById('mainBalance');
+            if(showNetProfit) {
+                mainBalanceEl.textContent = `${net.toLocaleString('en-US')} LE`;
+                mainBalanceEl.className = `text-2xl font-bold mt-1 ${net >= 0 ? 'text-app-income' : 'text-app-expense'}`;
+                document.querySelector('#mainBalance').previousElementSibling.innerHTML = `صافي الربح <i class="fa-solid fa-caret-up text-xs"></i>`;
+            } else {
+                // عرض المجموع للتبويب النشط
+                const displayTotal = activeTab === 'income' ? totalInc : totalExp;
+                mainBalanceEl.textContent = `${displayTotal.toLocaleString('en-US')} LE`;
+                mainBalanceEl.className = `text-2xl font-bold mt-1 ${activeTab === 'income' ? 'text-app-income' : 'text-app-expense'}`;
+                document.querySelector('#mainBalance').previousElementSibling.innerHTML = `الإجمالي <i class="fa-solid fa-caret-down text-xs"></i>`;
+            }
+
+            // تصفية البيانات حسب التبويب النشط لرسمها
+            const tabData = filtered.filter(t => t.type === activeTab);
+            const tabTotal = tabData.reduce((a, b) => a + b.amount, 0);
             
-            updateChart(filtered);
+            // تحديث الرقم في منتصف الرسم البياني
+            document.getElementById('chartCenterAmount').textContent = tabTotal.toLocaleString('en-US');
+
+            // تجميع البيانات حسب الفئات
+            const categoryTotals = {};
+            tabData.forEach(t => {
+                const cat = t.category || 'أخرى';
+                categoryTotals[cat] = (categoryTotals[cat] || 0) + t.amount;
+            });
+
+            // تحويلها لمصفوفة للترتيب
+            const categoryArray = Object.keys(categoryTotals).map(key => ({
+                name: key,
+                amount: categoryTotals[key],
+                percentage: tabTotal > 0 ? ((categoryTotals[key] / tabTotal) * 100).toFixed(1) : 0,
+                color: getCategoryColor(activeTab, key)
+            })).sort((a, b) => b.amount - a.amount); // ترتيب تنازلي
+
+            drawChart(categoryArray);
+            renderCategoryListDisplay(categoryArray);
+        }
+
+        // رسم الدائرة
+        function drawChart(dataArray) {
+            const canvas = document.getElementById('mainChart');
+            if(!canvas) return;
+
+            const labels = dataArray.map(d => d.name);
+            const data = dataArray.map(d => d.amount);
+            const colors = dataArray.map(d => d.color);
+
+            if (mainChartInstance) mainChartInstance.destroy();
             
+            // إذا لم يكن هناك بيانات، ارسم دائرة رمادية
+            if(data.length === 0) {
+                mainChartInstance = new Chart(canvas.getContext('2d'), {
+                    type: 'doughnut',
+                    data: { labels: ['لا توجد بيانات'], datasets: [{ data: [1], backgroundColor: ['#334155'], borderWidth: 0 }] },
+                    options: { cutout: '80%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: {enabled: false} } }
+                });
+                return;
+            }
+
+            mainChartInstance = new Chart(canvas.getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 2, borderColor: '#1e201e' }] },
+                options: {
+                    cutout: '80%', // تفريغ الدائرة من المنتصف بشكل كبير
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }, // إخفاء المفاتيح الافتراضية
+                        tooltip: {
+                            callbacks: { label: function(context) { return ` ${context.raw.toLocaleString('en-US')} LE`; } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // رسم قائمة الفئات تحت الدائرة
+        function renderCategoryListDisplay(dataArray) {
+            const container = document.getElementById('categoryListDisplay');
+            container.innerHTML = '';
+
+            if(dataArray.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 mt-4">لا توجد بيانات مسجلة في هذا القسم</p>';
+                return;
+            }
+
+            dataArray.forEach(cat => {
+                // استخراج الحرف الأول كأيقونة
+                const initial = cat.name.charAt(0);
+                
+                const item = document.createElement('div');
+                item.className = "bg-app-card rounded-xl p-4 flex justify-between items-center shadow-sm";
+                item.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg" style="background-color: ${cat.color}">
+                            ${initial}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white text-base">${cat.name}</h4>
+                            <span class="text-xs text-gray-400">${cat.percentage}%</span>
+                        </div>
+                    </div>
+                    <div class="text-lg font-bold text-white" dir="ltr">
+                        ${cat.amount.toLocaleString('en-US')} LE
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function getCategoryColor(type, categoryName) {
+            const cat = customCategories[type].find(c => c.name === categoryName);
+            return cat ? cat.color : (type === 'income' ? '#10b981' : '#ef4444'); 
+        }
+
+        window.openAddModal = function() {
+            addModal.classList.remove('hidden');
+        };
+        window.closeAddModal = function() {
+            addModal.classList.add('hidden');
+        };
+
+        window.openHistoryModal = function() {
+            updateHistoryTable();
+            historyModal.classList.remove('hidden');
+        };
+        window.closeHistoryModal = function() {
+            historyModal.classList.add('hidden');
+        };
+
+        // تحديث جدول السجل
+        function updateHistoryTable() {
             list.innerHTML = '';
+            // عرض كل البيانات بغض النظر عن التبويب النشط، لكن يمكن تطبيق الفلتر
+            const filterValue = filterSelect.value;
+            let filtered = filterValue === 'all' ? transactions : transactions.filter(t => t.truck === filterValue);
+
             filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(t => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-50 transition-colors";
-                const amntClass = t.type === 'income' ? 'text-success' : 'text-danger';
-                const cat = t.category ? `<span class="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded mt-1 font-bold">${t.category}</span>` : ''; 
+                const isInc = t.type === 'income';
+                const colorCls = isInc ? 'text-app-income' : 'text-app-expense';
+                const sign = isInc ? '+' : '-';
+                
                 tr.innerHTML = `
-                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${new Date(t.date).toLocaleDateString('ar-EG')}</td>
-                    <td class="px-4 py-4 font-bold text-sm text-gray-800">${t.truck}</td>
-                    <td class="px-4 py-4 text-sm text-gray-700"><div>${t.description}</div>${cat}</td>
-                    <td class="px-4 py-4 font-bold ${amntClass}" dir="ltr">${t.amount.toLocaleString('ar-EG')}</td>
-                    <td class="px-4 py-4"><button onclick="deleteTransaction(${t.id})" class="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-lg transition"><i class="fa-solid fa-trash"></i></button></td>
+                    <td class="py-3 px-2 text-gray-300 whitespace-nowrap">${new Date(t.date).toLocaleDateString('ar-EG', {month:'short', day:'numeric'})}</td>
+                    <td class="py-3 px-2 text-white font-medium">${t.truck}</td>
+                    <td class="py-3 px-2 text-gray-400 text-xs">${t.category}</td>
+                    <td class="py-3 px-2 text-left font-bold ${colorCls}" dir="ltr">${sign}${t.amount.toLocaleString('en-US')}</td>
+                    <td class="py-3 px-2 text-left">
+                        <button onclick="deleteTransaction(${t.id})" class="text-red-500 hover:text-red-400 p-1"><i class="fa-solid fa-trash"></i></button>
+                    </td>
                 `;
                 list.appendChild(tr);
             });
         }
 
-        // استخراج لون الفئة للرسم البياني
-        function getCategoryColor(type, categoryName) {
-            const cat = customCategories[type].find(c => c.name === categoryName);
-            return cat ? cat.color : (type === 'income' ? '#34d399' : '#f87171'); 
-        }
-
-        function updateChart(filtered) {
-            // 1. رسم المنصرفات
-            const canvasExp = document.getElementById('expensesChart');
-            if(canvasExp) {
-                const expenses = filtered.filter(t => t.type === 'expense');
-                const totalsExp = {};
-                expenses.forEach(t => totalsExp[t.category || 'أخرى'] = (totalsExp[t.category || 'أخرى'] || 0) + t.amount);
-                
-                const labelsExp = Object.keys(totalsExp);
-                const dataExp = Object.values(totalsExp);
-                const colorsExp = labelsExp.map(label => getCategoryColor('expense', label));
-
-                if (expenseChartInstance) expenseChartInstance.destroy();
-                if(expenses.length > 0) {
-                    expenseChartInstance = new Chart(canvasExp.getContext('2d'), {
-                        type: 'doughnut',
-                        data: { labels: labelsExp, datasets: [{ data: dataExp, backgroundColor: colorsExp, borderWidth: 1 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', rtl: true } } }
-                    });
-                }
+        window.updateCategoryDropdown = function(type) {
+            if(!categorySelect) return;
+            categorySelect.innerHTML = '';
+            if(customCategories[type]) {
+                customCategories[type].forEach(cat => {
+                    categorySelect.appendChild(new Option(cat.name, cat.name));
+                });
             }
+        };
 
-            // 2. رسم الإيرادات
-            const canvasInc = document.getElementById('incomeCategoryChart');
-            if(canvasInc) {
-                const incomes = filtered.filter(t => t.type === 'income');
-                const totalsInc = {};
-                incomes.forEach(t => totalsInc[t.category || 'أخرى'] = (totalsInc[t.category || 'أخرى'] || 0) + t.amount);
-                
-                const labelsInc = Object.keys(totalsInc);
-                const dataInc = Object.values(totalsInc);
-                const colorsInc = labelsInc.map(label => getCategoryColor('income', label));
-
-                if (incomeCategoryChartInstance) incomeCategoryChartInstance.destroy();
-                if(incomes.length > 0) {
-                    incomeCategoryChartInstance = new Chart(canvasInc.getContext('2d'), {
-                        type: 'doughnut',
-                        data: { labels: labelsInc, datasets: [{ data: dataInc, backgroundColor: colorsInc, borderWidth: 1 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', rtl: true } } }
-                    });
-                }
-            }
-
-            // 3. رسم مقارنة الإيرادات بالمصروفات
-            const canvasIE = document.getElementById('incomeExpenseChart');
-            if(canvasIE) {
-                const totalIncome = filtered.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-                const totalExpense = filtered.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
-
-                if (incomeExpenseChartInstance) incomeExpenseChartInstance.destroy();
-                if (totalIncome > 0 || totalExpense > 0) {
-                    incomeExpenseChartInstance = new Chart(canvasIE.getContext('2d'), {
-                        type: 'pie',
-                        data: {
-                            labels: ['الإيرادات', 'المصروفات'],
-                            datasets: [{
-                                data: [totalIncome, totalExpense],
-                                backgroundColor: ['#10b981', '#ef4444'],
-                                borderWidth: 2, borderColor: '#ffffff'
-                            }]
-                        },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', rtl: true } } }
-                    });
-                }
-            }
-        }
-
-        // تسجيل معاملة جديدة
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             const typeElem = document.querySelector('input[name="type"]:checked');
@@ -491,45 +509,147 @@
             };
             transactions.push(transaction);
             saveData();
+            
+            // تصفير الحقول وإغلاق النافذة
             document.getElementById('amount').value = '';
             document.getElementById('description').value = '';
+            closeAddModal();
+            
+            // الانتقال للتبويب الذي تم الإضافة فيه
+            switchTab(typeElem.value);
         });
 
         window.deleteTransaction = function(id) {
-            if (confirm('هل أنت متأكد من حذف هذه المعاملة؟')) {
+            if (confirm('حذف هذه المعاملة؟')) {
                 transactions = transactions.filter(t => t.id !== id);
                 saveData();
             }
         };
 
-        // تصدير البيانات لإكسيل
-        window.exportToCSV = function() {
-            if (transactions.length === 0) {
-                alert('لا توجد بيانات لتصديرها');
-                return;
+        // --- إدارة الفئات (Modal) ---
+        window.openCategoryModal = function() {
+            closeAddModal(); // إغلاق نافذة الإضافة أولاً
+            categoryModal.classList.remove('hidden');
+            const checkedType = document.querySelector('input[name="type"]:checked');
+            renderCategoryManagerList(checkedType ? checkedType.value : 'expense');
+        };
+
+        window.closeCategoryModal = function() {
+            categoryModal.classList.add('hidden');
+            const checkedType = document.querySelector('input[name="type"]:checked');
+            updateCategoryDropdown(checkedType ? checkedType.value : 'expense');
+            updateDashboard();
+            openAddModal(); // إعادة فتح نافذة الإضافة
+        };
+
+        window.renderCategoryManagerList = function(type) {
+            currentManagingType = type;
+            const btnExp = document.getElementById('btnManageExpense');
+            const btnInc = document.getElementById('btnManageIncome');
+            
+            if(type === 'expense') {
+                btnExp.className = 'flex-1 py-2 rounded-lg font-bold bg-app-expense text-white';
+                btnInc.className = 'flex-1 py-2 rounded-lg font-bold text-gray-400 hover:bg-black/20';
+            } else {
+                btnInc.className = 'flex-1 py-2 rounded-lg font-bold bg-app-income text-white';
+                btnExp.className = 'flex-1 py-2 rounded-lg font-bold text-gray-400 hover:bg-black/20';
             }
             
-            const BOM = "\uFEFF";
-            let csvContent = BOM + "التاريخ,النوع,السيارة,الفئة,البيان,المبلغ\n";
+            const ul = document.getElementById('categoryManagerList');
+            ul.innerHTML = '';
             
-            transactions.forEach(t => {
-                const typeAr = t.type === 'income' ? 'إيراد' : 'منصرف';
-                const row = `"${t.date}","${typeAr}","${t.truck}","${t.category || ''}","${t.description}","${t.amount}"`;
-                csvContent += row + "\n";
+            customCategories[type].forEach((cat, index) => {
+                ul.innerHTML += `
+                    <li class="flex justify-between items-center bg-app-card p-3 rounded-xl border border-gray-700">
+                        <div class="flex items-center gap-3">
+                            <input type="color" value="${cat.color}" onchange="updateCategoryColor('${type}', ${index}, this.value)" class="w-8 h-8 p-0 border-0 rounded cursor-pointer bg-transparent">
+                            <span class="text-sm font-semibold text-white">${cat.name}</span>
+                        </div>
+                        <button type="button" onclick="deleteCustomCategory('${type}', ${index})" class="text-red-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+                    </li>
+                `;
+            });
+        };
+
+        window.updateCategoryColor = function(type, index, newColor) {
+            customCategories[type][index].color = newColor;
+            saveData();
+        };
+
+        document.getElementById('addCategoryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('newCategoryName');
+            const colorInput = document.getElementById('newCategoryColor');
+            
+            if(nameInput.value.trim() === '') return;
+            
+            customCategories[currentManagingType].push({
+                name: nameInput.value.trim(),
+                color: colorInput.value
             });
             
+            saveData();
+            renderCategoryManagerList(currentManagingType);
+            nameInput.value = '';
+        });
+
+        window.deleteCustomCategory = function(type, index) {
+            if(confirm('حذف الفئة؟')) {
+                customCategories[type].splice(index, 1);
+                saveData();
+                renderCategoryManagerList(type);
+            }
+        };
+
+        window.exportToCSV = function() {
+            if (transactions.length === 0) return alert('لا توجد بيانات');
+            const BOM = "\uFEFF";
+            let csvContent = BOM + "التاريخ,النوع,السيارة,الفئة,البيان,المبلغ\n";
+            transactions.forEach(t => {
+                const typeAr = t.type === 'income' ? 'إيراد' : 'منصرف';
+                csvContent += `"${t.date}","${typeAr}","${t.truck}","${t.category || ''}","${t.description}","${t.amount}"\n`;
+            });
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", `حسابات_النقل_${new Date().toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
+            link.href = URL.createObjectURL(blob);
+            link.download = `سجل_السيارات_${new Date().toISOString().split('T')[0]}.csv`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         };
 
-        // تشغيل التطبيق عند البداية
+        // إعدادات زر التثبيت PWA
+        const installAppBtn = document.getElementById('installAppBtn');
+        let deferredPrompt;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+        if (installAppBtn && !isStandalone) {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                installAppBtn.classList.remove('hidden');
+            });
+
+            installAppBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') installAppBtn.classList.add('hidden');
+                    deferredPrompt = null;
+                } else {
+                    alert('للتثبيت: من قائمة المتصفح اختر "الإضافة إلى الشاشة الرئيسية".');
+                }
+            });
+        }
+
+        // تسجيل Service Worker للعمل بدون انترنت
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(() => {});
+            });
+        }
+
+        // بدء التشغيل
         loadData();
     </script>
 </body>
