@@ -1,0 +1,107 @@
+<!-- ... existing code ... -->
+    <header class="bg-primary text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex items-center gap-4">
+            <div class="bg-white/20 p-3 rounded-xl">
+                <i class="fa-solid fa-truck-moving text-3xl"></i>
+            </div>
+            <div class="flex-1">
+                <h1 class="text-2xl font-bold">نظام إدارة حسابات سيارات النقل</h1>
+                <p class="text-sm text-blue-200 mt-1">سجل الدخل، المنصرف، وتابع أرباح كل سيارة بسهولة</p>
+            </div>
+            <!-- زر تثبيت التطبيق (PWA) -->
+            <button id="installAppBtn" class="hidden bg-white text-primary font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-100 transition duration-200 flex items-center gap-2 text-sm sm:text-base">
+                <i class="fa-solid fa-download"></i>
+                <span class="hidden sm:inline">تثبيت</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+<!-- ... existing code ... -->
+        // تشغيل التطبيق عند التحميل
+        loadData();
+
+        // ==========================================
+        // إعدادات PWA (تثبيت التطبيق على الهاتف)
+        // ==========================================
+        
+        // 1. توليد أيقونة بصيغة SVG لاستخدامها كأيقونة للتطبيق على شاشة الهاتف
+        const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 24 24" fill="%231e3a8a"><path d="M20 8h-3V4c0-1.1-.9-2-2-2H3C1.9 2 1 2.9 1 4v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 16.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm12 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm-2.5-6H15V4h-4v7h4v.5h1.5l2 2.5z"/></svg>`;
+        const iconDataUrl = "data:image/svg+xml;charset=utf-8," + iconSvg;
+
+        // 2. حقن ملف manifest.json ديناميكياً لإخبار المتصفح بمعلومات التطبيق
+        const manifest = {
+            "name": "إدارة حسابات سيارات النقل",
+            "short_name": "حسابات النقل",
+            "start_url": window.location.href,
+            "display": "standalone",
+            "background_color": "#f8fafc",
+            "theme_color": "#1e3a8a",
+            "icons": [
+                {
+                    "src": iconDataUrl,
+                    "sizes": "192x192",
+                    "type": "image/svg+xml",
+                    "purpose": "any maskable"
+                },
+                {
+                    "src": iconDataUrl,
+                    "sizes": "512x512",
+                    "type": "image/svg+xml",
+                    "purpose": "any maskable"
+                }
+            ]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+        const manifestUrl = URL.createObjectURL(manifestBlob);
+        document.head.insertAdjacentHTML('beforeend', `<link rel="manifest" href="${manifestUrl}">`);
+
+        // 3. حقن Service Worker ليعمل التطبيق بخصائص PWA
+        const swCode = `
+            self.addEventListener('install', (e) => self.skipWaiting());
+            self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
+            self.addEventListener('fetch', (e) => {
+                e.respondWith(fetch(e.request).catch(() => new Response('Offline mode')));
+            });
+        `;
+        const swBlob = new Blob([swCode], {type: 'application/javascript'});
+        const swUrl = URL.createObjectURL(swBlob);
+        
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW Error:', err));
+            });
+        }
+
+        // 4. التحكم في ظهور زر "تثبيت التطبيق"
+        let deferredPrompt;
+        const installAppBtn = document.getElementById('installAppBtn');
+
+        if(installAppBtn) {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                // يمنع المتصفح من إظهار النافذة الافتراضية للتثبيت فوراً
+                e.preventDefault();
+                deferredPrompt = e;
+                // يظهر الزر الخاص بنا في الواجهة العلوية
+                installAppBtn.classList.remove('hidden');
+            });
+
+            installAppBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt(); // إظهار نافذة التثبيت
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        installAppBtn.classList.add('hidden');
+                    }
+                    deferredPrompt = null;
+                }
+            });
+
+            window.addEventListener('appinstalled', () => {
+                installAppBtn.classList.add('hidden');
+                showMessage('تم تثبيت التطبيق بنجاح!', 'success');
+            });
+        }
+    </script>
+</body>
+</html>
