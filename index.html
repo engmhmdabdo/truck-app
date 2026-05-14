@@ -1,107 +1,284 @@
-<!-- ... existing code ... -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة حسابات سيارات النقل</title>
+    
+    <!-- ربط ملف الـ Manifest (مهم جداً للتثبيت) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    
+    <!-- دعم الآيفون (iOS PWA) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="حسابات النقل">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/192x192/1e3a8a/ffffff?text=N" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Cairo) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Cairo', 'sans-serif'], },
+                    colors: { primary: '#1e3a8a', secondary: '#3b82f6', success: '#10b981', danger: '#ef4444', warning: '#f59e0b', }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen pb-12">
+
+    <!-- Header -->
     <header class="bg-primary text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex items-center gap-4">
-            <div class="bg-white/20 p-3 rounded-xl">
-                <i class="fa-solid fa-truck-moving text-3xl"></i>
-            </div>
-            <div class="flex-1">
-                <h1 class="text-2xl font-bold">نظام إدارة حسابات سيارات النقل</h1>
-                <p class="text-sm text-blue-200 mt-1">سجل الدخل، المنصرف، وتابع أرباح كل سيارة بسهولة</p>
+        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="bg-white/20 p-3 rounded-xl">
+                    <i class="fa-solid fa-truck-moving text-3xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold">نظام إدارة الحسابات</h1>
+                    <p class="text-sm text-blue-200 mt-1 hidden sm:block">سجل الدخل، المنصرف، وتابع أرباح كل سيارة</p>
+                </div>
             </div>
             <!-- زر تثبيت التطبيق (PWA) -->
             <button id="installAppBtn" class="hidden bg-white text-primary font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-100 transition duration-200 flex items-center gap-2 text-sm sm:text-base">
                 <i class="fa-solid fa-download"></i>
-                <span class="hidden sm:inline">تثبيت</span>
+                <span>تثبيت التطبيق</span>
             </button>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-<!-- ... existing code ... -->
-        // تشغيل التطبيق عند التحميل
-        loadData();
+        <!-- لوحة الإحصائيات العلوية -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4">
+                <div class="w-14 h-14 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-2xl"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                <div><p class="text-sm text-gray-500 font-semibold mb-1">الإيرادات</p><div class="flex items-baseline gap-1"><span id="totalIncome" class="text-2xl font-bold text-gray-900">0</span><span class="text-sm text-gray-500">ج.م</span></div></div>
+            </div>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4">
+                <div class="w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-2xl"><i class="fa-solid fa-arrow-trend-down"></i></div>
+                <div><p class="text-sm text-gray-500 font-semibold mb-1">المصروفات</p><div class="flex items-baseline gap-1"><span id="totalExpense" class="text-2xl font-bold text-gray-900">0</span><span class="text-sm text-gray-500">ج.م</span></div></div>
+            </div>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4">
+                <div class="w-14 h-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-2xl"><i class="fa-solid fa-wallet"></i></div>
+                <div><p class="text-sm text-gray-500 font-semibold mb-1">الربح</p><div class="flex items-baseline gap-1"><span id="netProfit" class="text-2xl font-bold text-gray-900">0</span><span class="text-sm text-gray-500">ج.م</span></div></div>
+            </div>
+        </div>
 
-        // ==========================================
-        // إعدادات PWA (تثبيت التطبيق على الهاتف)
-        // ==========================================
-        
-        // 1. توليد أيقونة بصيغة SVG لاستخدامها كأيقونة للتطبيق على شاشة الهاتف
-        const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 24 24" fill="%231e3a8a"><path d="M20 8h-3V4c0-1.1-.9-2-2-2H3C1.9 2 1 2.9 1 4v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 16.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm12 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm-2.5-6H15V4h-4v7h4v.5h1.5l2 2.5z"/></svg>`;
-        const iconDataUrl = "data:image/svg+xml;charset=utf-8," + iconSvg;
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- العمود الأيمن (النموذج + الرسم البياني) -->
+            <div class="lg:col-span-1 space-y-8">
+                <!-- نموذج تسجيل معاملة -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h2 class="text-lg font-bold text-gray-800 mb-6 border-b pb-2"><i class="fa-solid fa-circle-plus text-secondary ml-2"></i>تسجيل معاملة</h2>
+                    <form id="transactionForm" class="space-y-4">
+                        <div class="flex gap-4 mb-4">
+                            <label class="flex-1 cursor-pointer"><input type="radio" name="type" value="income" class="peer sr-only"><div class="text-center px-4 py-3 rounded-lg border border-gray-200 peer-checked:bg-green-50 peer-checked:border-green-500 peer-checked:text-green-700 transition hover:bg-gray-50">إيراد</div></label>
+                            <label class="flex-1 cursor-pointer"><input type="radio" name="type" value="expense" class="peer sr-only" checked><div class="text-center px-4 py-3 rounded-lg border border-gray-200 peer-checked:bg-red-50 peer-checked:border-red-500 peer-checked:text-red-700 transition hover:bg-gray-50">منصرف</div></label>
+                        </div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">السيارة</label><input type="text" id="truck" required class="w-full px-4 py-2 border border-gray-300 rounded-lg"></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">المبلغ</label><input type="number" id="amount" required min="1" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg"></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">التاريخ</label><input type="date" id="date" required class="w-full px-4 py-2 border border-gray-300 rounded-lg"></div>
+                        <div id="categoryContainer"><label class="block text-sm font-medium text-gray-700 mb-1">الفئة</label><select id="category" class="w-full px-4 py-2 border border-gray-300 rounded-lg"><option value="وقود">وقود</option><option value="صيانة">صيانة</option><option value="كاوتش">كاوتش</option><option value="كارتة">كارتة</option><option value="رواتب">رواتب</option><option value="مخالفات">مخالفات</option><option value="أخرى">أخرى</option></select></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">الوصف</label><input type="text" id="description" required class="w-full px-4 py-2 border border-gray-300 rounded-lg"></div>
+                        <button type="submit" class="w-full bg-primary hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-lg shadow-md mt-4">حفظ</button>
+                    </form>
+                </div>
+                <!-- الرسم البياني -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hidden md:block">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-chart-pie text-secondary ml-2"></i>المنصرفات</h2>
+                    <div class="relative h-64 w-full"><canvas id="expensesChart"></canvas></div>
+                </div>
+            </div>
 
-        // 2. حقن ملف manifest.json ديناميكياً لإخبار المتصفح بمعلومات التطبيق
-        const manifest = {
-            "name": "إدارة حسابات سيارات النقل",
-            "short_name": "حسابات النقل",
-            "start_url": window.location.href,
-            "display": "standalone",
-            "background_color": "#f8fafc",
-            "theme_color": "#1e3a8a",
-            "icons": [
-                {
-                    "src": iconDataUrl,
-                    "sizes": "192x192",
-                    "type": "image/svg+xml",
-                    "purpose": "any maskable"
-                },
-                {
-                    "src": iconDataUrl,
-                    "sizes": "512x512",
-                    "type": "image/svg+xml",
-                    "purpose": "any maskable"
-                }
-            ]
-        };
-        const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-        const manifestUrl = URL.createObjectURL(manifestBlob);
-        document.head.insertAdjacentHTML('beforeend', `<link rel="manifest" href="${manifestUrl}">`);
+            <!-- العمود الأيسر (الفلتر + الجدول) -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col sm:flex-row items-center gap-4 justify-between">
+                    <select id="filterTruck" class="w-full sm:w-64 px-4 py-2 border border-gray-300 rounded-lg"><option value="all">جميع السيارات</option></select>
+                    <button onclick="exportToExcel()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-5 rounded-lg flex items-center justify-center gap-2"><i class="fa-solid fa-file-excel"></i> تصدير Excel</button>
+                </div>
+                <!-- جدول المعاملات -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50"><tr><th class="px-4 py-3 text-right text-xs text-gray-500">التاريخ</th><th class="px-4 py-3 text-right text-xs text-gray-500">السيارة</th><th class="px-4 py-3 text-right text-xs text-gray-500">البيان</th><th class="px-4 py-3 text-right text-xs text-gray-500">المبلغ</th><th class="px-4 py-3 text-right text-xs text-gray-500">حذف</th></tr></thead>
+                            <tbody id="transactionList" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 
-        // 3. حقن Service Worker ليعمل التطبيق بخصائص PWA
-        const swCode = `
-            self.addEventListener('install', (e) => self.skipWaiting());
-            self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
-            self.addEventListener('fetch', (e) => {
-                e.respondWith(fetch(e.request).catch(() => new Response('Offline mode')));
-            });
-        `;
-        const swBlob = new Blob([swCode], {type: 'application/javascript'});
-        const swUrl = URL.createObjectURL(swBlob);
-        
+    <script>
+        // تسجيل الـ Service Worker ليعمل كـ PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW Error:', err));
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker Registered'))
+                    .catch(err => console.log('Service Worker Error', err));
             });
         }
 
-        // 4. التحكم في ظهور زر "تثبيت التطبيق"
+        // كود زر التثبيت
         let deferredPrompt;
         const installAppBtn = document.getElementById('installAppBtn');
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installAppBtn.classList.remove('hidden');
+        });
 
-        if(installAppBtn) {
-            window.addEventListener('beforeinstallprompt', (e) => {
-                // يمنع المتصفح من إظهار النافذة الافتراضية للتثبيت فوراً
-                e.preventDefault();
-                deferredPrompt = e;
-                // يظهر الزر الخاص بنا في الواجهة العلوية
-                installAppBtn.classList.remove('hidden');
+        installAppBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') installAppBtn.classList.add('hidden');
+                deferredPrompt = null;
+            }
+        });
+
+        // ------------------ منطق التطبيق ------------------
+        let transactions = [];
+        let expenseChartInstance = null;
+
+        const form = document.getElementById('transactionForm');
+        const list = document.getElementById('transactionList');
+        const filterSelect = document.getElementById('filterTruck');
+        const typeRadios = document.querySelectorAll('input[name="type"]');
+        const categoryContainer = document.getElementById('categoryContainer');
+        const dateInput = document.getElementById('date');
+        
+        if(dateInput) dateInput.valueAsDate = new Date();
+
+        typeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'expense') categoryContainer.classList.remove('hidden');
+                else categoryContainer.classList.add('hidden');
             });
+        });
 
-            installAppBtn.addEventListener('click', async () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt(); // إظهار نافذة التثبيت
-                    const { outcome } = await deferredPrompt.userChoice;
-                    if (outcome === 'accepted') {
-                        installAppBtn.classList.add('hidden');
-                    }
-                    deferredPrompt = null;
-                }
-            });
+        function loadData() {
+            const saved = localStorage.getItem('transport_data');
+            if (saved) { try { transactions = JSON.parse(saved); } catch(e) { transactions = []; } }
+            updateTruckFilter();
+            updateUI();
+        }
 
-            window.addEventListener('appinstalled', () => {
-                installAppBtn.classList.add('hidden');
-                showMessage('تم تثبيت التطبيق بنجاح!', 'success');
+        function saveData() {
+            localStorage.setItem('transport_data', JSON.stringify(transactions));
+            updateTruckFilter();
+            updateUI();
+        }
+
+        function updateTruckFilter() {
+            const currentVal = filterSelect.value;
+            const trucks = [...new Set(transactions.map(t => t.truck))];
+            filterSelect.innerHTML = '<option value="all">جميع السيارات</option>';
+            trucks.forEach(t => filterSelect.appendChild(new Option(t, t)));
+            if (trucks.includes(currentVal)) filterSelect.value = currentVal;
+        }
+
+        filterSelect.addEventListener('change', updateUI);
+
+        function updateUI() {
+            const filterValue = filterSelect.value;
+            let filtered = filterValue === 'all' ? transactions : transactions.filter(t => t.truck === filterValue);
+            
+            const income = filtered.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+            const expense = filtered.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+            
+            document.getElementById('totalIncome').textContent = income;
+            document.getElementById('totalExpense').textContent = expense;
+            document.getElementById('netProfit').textContent = income - expense;
+            
+            updateChart(filtered);
+            
+            list.innerHTML = '';
+            filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(t => {
+                const tr = document.createElement('tr');
+                const amntClass = t.type === 'income' ? 'text-success' : 'text-danger';
+                const cat = t.type === 'expense' ? `(${t.category})` : '';
+                tr.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap text-sm">${new Date(t.date).toLocaleDateString('ar-EG')}</td>
+                    <td class="px-4 py-3 font-semibold text-sm">${t.truck}</td>
+                    <td class="px-4 py-3 text-sm">${t.description} <span class="text-xs text-gray-400">${cat}</span></td>
+                    <td class="px-4 py-3 font-bold ${amntClass}" dir="ltr">${t.amount}</td>
+                    <td class="px-4 py-3"><button onclick="deleteTransaction(${t.id})" class="text-red-500"><i class="fa-solid fa-trash"></i></button></td>
+                `;
+                list.appendChild(tr);
             });
         }
+
+        function updateChart(filtered) {
+            const canvas = document.getElementById('expensesChart');
+            if(!canvas) return;
+            const expenses = filtered.filter(t => t.type === 'expense');
+            const totals = {};
+            expenses.forEach(t => totals[t.category || 'أخرى'] = (totals[t.category || 'أخرى'] || 0) + t.amount);
+            
+            if (expenseChartInstance) expenseChartInstance.destroy();
+            
+            if(expenses.length > 0) {
+                expenseChartInstance = new Chart(canvas.getContext('2d'), {
+                    type: 'doughnut',
+                    data: { labels: Object.keys(totals), datasets: [{ data: Object.values(totals), backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#8b5cf6','#10b981','#ec4899','#64748b'] }] },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+        }
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const type = document.querySelector('input[name="type"]:checked').value;
+            const transaction = {
+                id: Date.now(), type: type,
+                truck: document.getElementById('truck').value.trim(),
+                amount: parseFloat(document.getElementById('amount').value),
+                date: document.getElementById('date').value,
+                category: type === 'expense' ? document.getElementById('category').value : '',
+                description: document.getElementById('description').value.trim()
+            };
+            transactions.push(transaction);
+            saveData();
+            document.getElementById('amount').value = '';
+            document.getElementById('description').value = '';
+            alert('تم الحفظ بنجاح');
+        });
+
+        window.deleteTransaction = function(id) {
+            if(confirm('هل أنت متأكد من الحذف؟')) {
+                transactions = transactions.filter(t => t.id !== id);
+                saveData();
+            }
+        };
+
+        window.exportToExcel = function() {
+            let csv = "\uFEFFرقم,النوع,السيارة,المبلغ,التاريخ,الفئة,الوصف\n";
+            transactions.forEach(t => csv += `"${t.id}","${t.type === 'income'?'إيراد':'منصرف'}","${t.truck}","${t.amount}","${t.date}","${t.category||'-'}","${t.description}"\n`);
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+            link.download = `حسابات_نقل_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        };
+
+        loadData();
     </script>
 </body>
 </html>
