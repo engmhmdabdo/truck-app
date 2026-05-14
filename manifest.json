@@ -2,22 +2,22 @@
 "name": "إدارة حسابات سيارات النقل",
 "short_name": "حسابات النقل",
 "description": "تطبيق لتسجيل ومتابعة إيرادات ومصروفات سيارات النقل",
-"start_url": "./index.html",
+"start_url": ".",
 "display": "standalone",
 "background_color": "#f8fafc",
 "theme_color": "#1e3a8a",
 "orientation": "portrait-primary",
 "icons": [
 {
-"src": "https://via.placeholder.com/192x192/1e3a8a/ffffff?text=Icon",
+"src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiB2aWV3Qm94PSIwIDAgMTkyIDE5MiI+PHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIxOTIiIGZpbGw9IiMxZTNhOGEiIHJ4PSI0MCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSI4MHB4Ij7wn5qYPC90ZXh0Pjwvc3ZnPg==",
 "sizes": "192x192",
-"type": "image/png",
+"type": "image/svg+xml",
 "purpose": "any maskable"
 },
 {
-"src": "https://via.placeholder.com/512x512/1e3a8a/ffffff?text=App",
+"src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9IiMxZTNhOGEiIHJ4PSIxMDAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtc2l6ZT0iMjAwcHgiPvCfmpg8L3RleHQ+PC9zdmc+",
 "sizes": "512x512",
-"type": "image/png",
+"type": "image/svg+xml",
 "purpose": "any maskable"
 }
 ]
