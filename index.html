@@ -56,8 +56,8 @@
                     <p class="text-sm text-blue-200 mt-1 hidden sm:block">سجل الدخل، المنصرف، وتابع أرباح كل سيارة</p>
                 </div>
             </div>
-            <!-- زر تثبيت التطبيق (PWA) -->
-            <button id="installAppBtn" class="hidden bg-white text-primary font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-100 transition duration-200 flex items-center gap-2 text-sm sm:text-base">
+            <!-- زر تثبيت التطبيق (PWA) - مع إزالة hidden مبدئياً للتحقق من ظهوره -->
+            <button id="installAppBtn" class="bg-white text-primary font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-100 transition duration-200 flex items-center gap-2 text-sm sm:text-base">
                 <i class="fa-solid fa-download"></i>
                 <span>تثبيت التطبيق</span>
             </button>
@@ -139,9 +139,16 @@
         // كود زر التثبيت
         let deferredPrompt;
         const installAppBtn = document.getElementById('installAppBtn');
+        
+        // إخفاء الزر افتراضياً حتى نتأكد من إمكانية التثبيت
+        installAppBtn.classList.add('hidden');
+
+        // حدث قبل التثبيت (يعمل فقط إذا لم يكن التطبيق مثبتاً وتوفرت شروط PWA)
         window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('beforeinstallprompt fired'); // للتحقق من عمل الحدث في Console
             e.preventDefault();
             deferredPrompt = e;
+            // إظهار الزر إذا كان التثبيت ممكناً
             installAppBtn.classList.remove('hidden');
         });
 
@@ -149,9 +156,23 @@
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') installAppBtn.classList.add('hidden');
+                if (outcome === 'accepted') {
+                    installAppBtn.classList.add('hidden');
+                    console.log('User accepted the install prompt');
+                } else {
+                    console.log('User dismissed the install prompt');
+                }
                 deferredPrompt = null;
+            } else {
+                 // كإجراء احتياطي، إذا تم الضغط على الزر ولم يكن deferredPrompt متاحاً
+                 alert('يرجى استخدام خيار "الإضافة إلى الشاشة الرئيسية" (Add to Home screen) من قائمة المتصفح (الثلاث نقاط) لتثبيت التطبيق.');
             }
+        });
+        
+        // حدث عند نجاح التثبيت
+        window.addEventListener('appinstalled', () => {
+            installAppBtn.classList.add('hidden');
+            console.log('PWA was installed');
         });
 
         // ------------------ منطق التطبيق ------------------
