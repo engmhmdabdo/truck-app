@@ -1,11 +1,11 @@
 const CACHE_NAME = 'transport-app-v1';
 const ASSETS = [
     './',
+const CACHE_NAME = 'transport-app-v2';
+const ASSETS = [
+    './',
     './index.html',
-    './manifest.json',
-    'https://cdn.tailwindcss.com',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-    'https://cdn.jsdelivr.net/npm/chart.js'
+    './manifest.json'
 ];
 
 // 1. تثبيت وحفظ الملفات في ذاكرة الهاتف
