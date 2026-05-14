@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إدارة حسابات سيارات النقل</title>
     
-    <!-- ربط ملف الـ Manifest (مهم جداً للتثبيت) -->
+    <!-- ربط ملف الـ Manifest -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e3a8a">
     
@@ -56,8 +56,8 @@
                     <p class="text-sm text-blue-200 mt-1 hidden sm:block">سجل الدخل، المنصرف، وتابع أرباح كل سيارة</p>
                 </div>
             </div>
-            <!-- زر تثبيت التطبيق (PWA) - مع إزالة hidden مبدئياً للتحقق من ظهوره -->
-            <button id="installAppBtn" class="bg-white text-primary font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-100 transition duration-200 flex items-center gap-2 text-sm sm:text-base">
+            <!-- زر تثبيت التطبيق (PWA) -->
+            <button id="installAppBtn" class="bg-white text-primary font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-100 transition duration-200 flex items-center gap-2 text-sm sm:text-base hidden">
                 <i class="fa-solid fa-download"></i>
                 <span>تثبيت التطبيق</span>
             </button>
@@ -140,28 +140,37 @@
         let deferredPrompt;
         const installAppBtn = document.getElementById('installAppBtn');
         
-        // تأكد من أن الزر ظاهر دائماً للمستخدم
-        if(installAppBtn) installAppBtn.classList.remove('hidden');
+        // التحقق مما إذا كان التطبيق مفتوحاً في وضع الـ Standalone (كمستقل)
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-        // حدث قبل التثبيت (التقاط إشارة المتصفح)
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-        });
+        // إذا كان يُعرض كـ PWA مستقلة أو تم التثبيت مسبقاً، نترك الزر مخفياً.
+        if (!isStandalone) {
+             // إظهار الزر فقط إذا كنا على متصفح عادي
+             window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                if(installAppBtn) installAppBtn.classList.remove('hidden');
+            });
+        }
 
-        installAppBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                // المتصفح يدعم التثبيت المباشر
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    console.log('User accepted the install prompt');
+        if(installAppBtn) {
+            installAppBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        installAppBtn.classList.add('hidden'); // إخفاء الزر بعد الموافقة
+                    }
+                    deferredPrompt = null;
+                } else {
+                     alert('كيفية تثبيت التطبيق:\n\n📱 أندرويد: اضغط على قائمة المتصفح (الثلاث نقاط) واختر "الإضافة إلى الشاشة الرئيسية".\n\n🍏 آيفون: اضغط على زر المشاركة بالأسفل واختر "إضافة إلى الصفحة الرئيسية".');
                 }
-                deferredPrompt = null;
-            } else {
-                 // إذا المتصفح يمنع التثبيت المباشر أو التطبيق مثبت مسبقاً
-                 alert('كيفية تثبيت التطبيق:\n\n📱 أندرويد: اضغط على قائمة المتصفح (الثلاث نقاط) واختر "الإضافة إلى الشاشة الرئيسية" (Add to Home screen).\n\n🍏 آيفون: اضغط على زر المشاركة بالأسفل واختر "إضافة إلى الصفحة الرئيسية" (Add to Home screen).\n\nملاحظة: إذا لم تجد الخيار، فقد يكون التطبيق مثبتاً بالفعل على جهازك.');
-            }
+            });
+        }
+        
+        // حدث يُطلق عند اكتمال عملية التثبيت بنجاح (لإخفاء الزر فوراً)
+        window.addEventListener('appinstalled', (evt) => {
+            if(installAppBtn) installAppBtn.classList.add('hidden');
         });
 
         // ------------------ منطق التطبيق ------------------
