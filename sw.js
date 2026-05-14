@@ -1,7 +1,4 @@
-const CACHE_NAME = 'transport-app-v1';
-const ASSETS = [
-    './',
-const CACHE_NAME = 'transport-app-v2';
+const CACHE_NAME = 'transport-app-v3';
 const ASSETS = [
     './',
     './index.html',
